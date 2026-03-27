@@ -1,11 +1,12 @@
 # 🎓 EduFlow – Academic Assignment Dashboard
 
 **EduFlow** is a premium, high-performance web application built for modern academic environments. It enables seamless assignment distribution, tracking, and submission between professors and students with a focus on high-end UX and responsive design.
-
+Demo :https://eduflow-one-virid.vercel.app/
 ---
 
 ### 🔑 Quick Demo Access
 Skip the registration! Use the **Quick Demo Buttons** on the login page or use these credentials:
+Live demo :https://eduflow-one-virid.vercel.app/
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
