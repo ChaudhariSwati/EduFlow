@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import Register from './Auth/Register'
 import ForgotPassword from './Auth/ForgotPassword'
@@ -13,7 +13,7 @@ const AuthBackground = ({ children }) => (
 )
 
 export default function Login() {
-  const { login } = useApp()
+  const { login, googleLogin } = useApp()
   const [view, setView] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,13 +22,63 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const googleButtonRef = useRef(null)
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+  useEffect(() => {
+    if (!googleClientId || view !== 'login') {
+      return undefined
+    }
+
+    const initGoogleButton = () => {
+      if (!window.google || !googleButtonRef.current) {
+        return
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async ({ credential }) => {
+          setLoading(true)
+          setError('')
+          const result = await googleLogin(credential)
+          if (!result.success) {
+            setError(result.error)
+          }
+          setLoading(false)
+        },
+      })
+
+      googleButtonRef.current.innerHTML = ''
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        width: 360,
+      })
+    }
+
+    if (window.google) {
+      initGoogleButton()
+      return undefined
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = initGoogleButton
+    document.head.appendChild(script)
+
+    return () => {
+      script.onload = null
+    }
+  }, [googleClientId, googleLogin, view])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    await new Promise(r => setTimeout(r, 600))
-    const result = login(email, password)
+    const result = await login(email, password)
     if (!result.success) setError(result.error)
     setLoading(false)
   }
@@ -41,12 +91,10 @@ export default function Login() {
     
     setEmail(creds.e);
     setPassword(creds.p);
-    // Visual feedback then login
     setLoading(true);
-    setTimeout(() => {
-      login(creds.e, creds.p);
+    login(creds.e, creds.p).finally(() => {
       setLoading(false);
-    }, 500);
+    })
   }
 
   if (view === 'register') return <AuthBackground><Register onSwitch={() => setView('login')} /></AuthBackground>
@@ -135,6 +183,31 @@ export default function Login() {
             >
               {loading ? "Verifying..." : "Sign In"}
             </button>
+
+            <div className="flex items-center gap-3 text-slate-500 text-[11px] pt-1">
+              <span className="h-px flex-1 bg-slate-800" />
+              OR
+              <span className="h-px flex-1 bg-slate-800" />
+            </div>
+
+            {googleClientId ? (
+              <div className="flex justify-center">
+                <div ref={googleButtonRef} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled
+                  className="w-full border border-slate-700 bg-slate-900/70 py-3 rounded-xl text-slate-400 font-medium cursor-not-allowed"
+                >
+                  Sign in with Google
+                </button>
+                <p className="text-[11px] text-slate-500 text-center">
+                  Set VITE_GOOGLE_CLIENT_ID in .env to enable Google sign-in.
+                </p>
+              </div>
+            )}
           </form>
 
           {/* Create Account Link */}

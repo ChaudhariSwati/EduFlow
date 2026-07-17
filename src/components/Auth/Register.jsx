@@ -5,11 +5,15 @@ export default function Register({ onSwitch }) {
   const { register } = useApp();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = register(form);
+    setError('');
+    setLoading(true);
+    const res = await register(form);
     if (!res.success) setError(res.error);
+    setLoading(false);
   };
 
   return (
@@ -49,8 +53,8 @@ export default function Register({ onSwitch }) {
 
         {error && <p className="text-xs text-red-400 bg-red-400/10 p-2 rounded-lg">{error}</p>}
 
-        <button className="w-full bg-primary py-3 rounded-xl text-white font-bold hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 active:scale-[0.98]">
-          Create Account
+        <button disabled={loading} className="w-full bg-primary py-3 rounded-xl text-white font-bold hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 active:scale-[0.98] disabled:opacity-60">
+          {loading ? 'Creating...' : 'Create Account'}
         </button>
       </form>
       

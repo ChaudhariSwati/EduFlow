@@ -2,16 +2,48 @@ import React, { useState } from 'react'
 import { useApp } from '../context/AppContext'
 
 export default function CreateAssignmentModal({ onClose }) {
-  const { createAssignment } = useApp()
+  const { createAssignment, generateAssignmentDraft } = useApp()
   const [form, setForm] = useState({ title:'', description:'', driveLink:'', dueDate:'' })
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   const handle = e => setForm(f => ({...f, [e.target.name]: e.target.value}))
 
-  const submit = e => {
+  const handleGenerateWithAi = async () => {
+    setError('')
+    if (!form.title || form.title.trim().length < 3) {
+      setError('Enter a title/topic first to generate with Gemini.')
+      return
+    }
+
+    setAiLoading(true)
+    try {
+      const draft = await generateAssignmentDraft({ topic: form.title, dueDate: form.dueDate })
+      setForm((prev) => ({
+        ...prev,
+        title: draft.title || prev.title,
+        description: draft.description || prev.description,
+      }))
+    } catch (err) {
+      setError(err.message || 'Gemini generation failed.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const submit = async e => {
     e.preventDefault()
+    setError('')
     if (!form.title || !form.dueDate) return setError('Title and Due Date are required.')
-    createAssignment(form)
-    onClose()
+    setLoading(true)
+    try {
+      await createAssignment(form)
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Unable to create assignment.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const inputStyle = {width:'100%', background:'rgba(15,14,23,0.8)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'12px', padding:'10px 14px', color:'white', fontSize:'13px', outline:'none', fontFamily:'DM Sans,sans-serif', boxSizing:'border-box'}
@@ -27,7 +59,30 @@ export default function CreateAssignmentModal({ onClose }) {
 
         <form onSubmit={submit}>
           <div style={{marginBottom:'16px'}}><label style={labelStyle}>Title *</label><input name="title" value={form.title} onChange={handle} placeholder="e.g. React Hooks Assignment" style={inputStyle} required /></div>
-          <div style={{marginBottom:'16px'}}><label style={labelStyle}>Description</label><textarea name="description" value={form.description} onChange={handle} rows={3} placeholder="Assignment instructions..." style={{...inputStyle, resize:'none'}} /></div>
+          <div style={{marginBottom:'16px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
+              <label style={{...labelStyle, marginBottom:0}}>Description</label>
+              <button
+                type="button"
+                onClick={handleGenerateWithAi}
+                disabled={aiLoading || loading}
+                style={{
+                  background:'rgba(108,99,255,0.15)',
+                  border:'1px solid rgba(108,99,255,0.35)',
+                  color:'#c4b5fd',
+                  borderRadius:'10px',
+                  fontSize:'11px',
+                  fontWeight:600,
+                  padding:'6px 10px',
+                  cursor: aiLoading || loading ? 'not-allowed' : 'pointer',
+                  opacity: aiLoading || loading ? 0.6 : 1,
+                }}
+              >
+                {aiLoading ? 'Generating...' : 'Generate with Gemini'}
+              </button>
+            </div>
+            <textarea name="description" value={form.description} onChange={handle} rows={3} placeholder="Assignment instructions..." style={{...inputStyle, resize:'none'}} />
+          </div>
           <div style={{marginBottom:'16px'}}><label style={labelStyle}>Google Drive Link</label><input name="driveLink" value={form.driveLink} onChange={handle} placeholder="https://drive.google.com/..." style={inputStyle} /></div>
           <div style={{marginBottom:'20px'}}><label style={labelStyle}>Due Date *</label><input name="dueDate" type="date" value={form.dueDate} onChange={handle} style={inputStyle} required /></div>
 
@@ -35,7 +90,7 @@ export default function CreateAssignmentModal({ onClose }) {
 
           <div style={{display:'flex',gap:'10px'}}>
             <button type="button" onClick={onClose} style={{flex:1,padding:'11px',borderRadius:'12px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',color:'#A7A5B8',cursor:'pointer',fontSize:'13px',fontWeight:600,fontFamily:'DM Sans,sans-serif'}}>Cancel</button>
-            <button type="submit" style={{flex:1,padding:'11px',borderRadius:'12px',background:'#6C63FF',border:'none',color:'white',cursor:'pointer',fontSize:'13px',fontWeight:600,fontFamily:'DM Sans,sans-serif'}}>Create</button>
+            <button type="submit" disabled={loading} style={{flex:1,padding:'11px',borderRadius:'12px',background:'#6C63FF',border:'none',color:'white',cursor:'pointer',fontSize:'13px',fontWeight:600,fontFamily:'DM Sans,sans-serif',opacity: loading ? 0.7 : 1}}>{loading ? 'Creating...' : 'Create'}</button>
           </div>
         </form>
       </div>

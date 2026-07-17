@@ -18,8 +18,7 @@ export default function ForgotPassword({ onSwitch }) {
     }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    const res = resetPassword(email, newPassword);
+    const res = await resetPassword(email, newPassword);
     
     if (res.success) {
       setMessage({ type: 'success', text: 'Password updated! Redirecting...' });
@@ -38,7 +37,7 @@ export default function ForgotPassword({ onSwitch }) {
         <input type="password" placeholder="New Password" required className="w-full bg-dark/60 border border-white/10 p-3 rounded-xl text-white" onChange={e => setNewPassword(e.target.value)} />
         <input type="password" placeholder="Confirm Password" required className="w-full bg-dark/60 border border-white/10 p-3 rounded-xl text-white" onChange={e => setConfirmPassword(e.target.value)} />
         {message.text && <p className="text-xs text-center text-primary">{message.text}</p>}
-        <button disabled={loading} className="w-full bg-primary py-3 rounded-xl text-white font-bold">{loading ? 'Saving...' : 'Update'}</button>
+        <button disabled={loading} className="w-full bg-primary py-3 rounded-xl text-white font-bold disabled:opacity-60">{loading ? 'Saving...' : 'Update'}</button>
       </form>
       <button onClick={onSwitch} className="w-full text-muted text-sm mt-4">Back to Login</button>
     </div>

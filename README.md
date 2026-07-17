@@ -1,6 +1,6 @@
 # 🎓 EduFlow – Academic Assignment Dashboard
 
-**EduFlow** is a premium, high-performance web application built for modern academic environments. It enables seamless assignment distribution, tracking, and submission between professors and students — with a focus on high-end UX and responsive design.
+**EduFlow** is a full-stack academic assignment platform built for modern academic environments. It enables seamless assignment distribution, tracking, and submission between professors and students with a focused Express + MongoDB backend, JWT auth, and a polished responsive UI.
 
 **Live Demo:** https://eduflow-one-virid.vercel.app/
 
@@ -23,8 +23,8 @@ Live demo :https://eduflow-one-virid.vercel.app/
 ### ✨ Key Features
 
 #### **👨‍🏫 Professor Privileges (Admin)**
-- **Assignment Lifecycle:** Create, edit, and delete assignments with title, description, due date, and a Google Drive link.
-- **Real-time Tracking:** View a live per-student submission status list on every assignment card.
+- **Assignment Lifecycle:** Create and delete assignments with title, description, due date, and a Google Drive link.
+- **Protected Admin Access:** JWT-based authentication and backend middleware keep admin routes server-side protected.
 - **Class Analytics:** Instant stats on total students, pending tasks, and completion percentages with visual progress bars.
 
 #### **👩‍🎓 Student Experience**
@@ -34,8 +34,9 @@ Live demo :https://eduflow-one-virid.vercel.app/
 
 #### **💎 Premium Engineering**
 - **Glassmorphism UI:** A sleek, professional **Slate & Blue** dark theme with backdrop blur and gradient accents.
-- **Auth Features:** Password visibility toggle and international country code support for phone numbers.
+- **Auth Features:** Password visibility toggle, JWT sessions, bcrypt password hashing, and protected backend routes.
 - **Mobile First:** 100% responsive layout that works perfectly on phones, tablets, and desktops.
+- **API Ready:** The backend is documented and can be exercised in Postman.
 
 ---
 
@@ -47,24 +48,14 @@ EduFlow/
 ├── index.html
 ├── package.json
 ├── vite.config.js
-├── tailwind.config.js
-├── postcss.config.js
-│
+├── server/                            ← Express + MongoDB API
 └── src/
-    ├── App.jsx                        ← Root component; handles role-based routing
+    ├── App.jsx                        ← Root component; handles auth loading and routing
     ├── App.css                        ← App-level styles
     ├── main.jsx                       ← React DOM entry point
     ├── index.css                      ← Global resets and keyframe animations
-    │
-    ├── assets/
-    │   └── hero.png                   ← Static assets
-    │
-    ├── data/
-    │   └── mockData.js                ← Seed users & assignments (mock JSON)
-    │
     ├── context/
-    │   └── AppContext.jsx             ← Global state: auth, assignments, CRUD ops
-    │
+    │   └── AppContext.jsx             ← API-backed auth, assignments, and submission actions
     └── components/
         ├── Login.jsx                  ← Sign in form + quick demo access buttons
         ├── Navbar.jsx                 ← Top navigation with user info and logout
@@ -75,7 +66,6 @@ EduFlow/
         ├── ConfirmSubmitModal.jsx     ← Step 1 of 2-step submission verification
         ├── SubmitConfirmModal.jsx     ← Step 2 final confirmation modal
         ├── CreateAssignmentModal.jsx  ← Admin form to create a new assignment
-        │
         └── Auth/
             ├── Register.jsx           ← New user registration with role selection
             └── ForgotPassword.jsx     ← Password recovery flow
@@ -87,20 +77,21 @@ EduFlow/
 
 | Layer | Technology |
 | :--- | :--- |
-| **Core** | React 18 (Vite) |
+| **Core** | React 19 (Vite) |
 | **Styling** | Tailwind CSS |
 | **State Management** | React Context API + `useState` / `useEffect` |
-| **Persistence** | localStorage API |
-| **Auth** | Simulated role-based auth via mock user data |
-| **Deployment** | Vercel |
+| **Backend** | Express + MongoDB + Mongoose |
+| **Auth** | JWT sessions in httpOnly cookies + bcrypt hashing |
+| **Deployment** | Vercel frontend + Render/Railway backend + MongoDB Atlas |
 
 ---
 
 ## 📦 Setup & Installation
 
 ### Prerequisites
-- Node.js v16+
+- Node.js v18+
 - npm or yarn
+- MongoDB connection string
 
 ### Local Installation
 
@@ -111,14 +102,41 @@ git clone https://github.com/ChaudhariSwati/EduFlow.git
 # Enter the directory
 cd EduFlow
 
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Start the local development server
+# Install backend dependencies
+cd server
+npm install
+cd ..
+
+# Start the API server
+npm run dev:server
+
+# Start the frontend in another terminal
 npm run dev
 ```
 
-The app will be running at `http://localhost:5173`
+The frontend runs at `http://localhost:5173` and the API runs at `http://localhost:4000`.
+
+### Environment Variables
+
+Create a root `.env` for the frontend and a `server/.env` for the API:
+
+```bash
+VITE_API_URL=http://localhost:4000
+```
+
+```bash
+PORT=4000
+MONGODB_URI=mongodb://127.0.0.1:27017/eduflow
+MONGODB_DB_NAME=eduflow
+JWT_SECRET=replace-with-a-long-random-string
+CLIENT_URL=http://localhost:5173
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-1.5-flash
+```
 
 ### Build for Production
 
@@ -126,15 +144,34 @@ The app will be running at `http://localhost:5173`
 npm run build
 ```
 
-### Deploy to Vercel
+### Deploy to Vercel / Render
 
 ```bash
-# Install Vercel CLI globally
-npm install -g vercel
-
-# Run from project root
+# Deploy the frontend with Vercel
 vercel --prod
+
+# Deploy the backend separately on Render or Railway using the server/ folder
 ```
+
+---
+
+## 🔌 API Routes
+
+| Method | Route | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Create a student or admin account and set the auth cookie |
+| `POST` | `/api/auth/login` | Authenticate and set the auth cookie |
+| `GET` | `/api/auth/me` | Return the current authenticated user |
+| `POST` | `/api/auth/logout` | Clear the auth cookie |
+| `POST` | `/api/auth/reset-password` | Update a password by email for the demo reset flow |
+| `GET` | `/api/assignments` | Fetch assignments for the signed-in user |
+| `POST` | `/api/assignments` | Create a new assignment as an admin |
+| `DELETE` | `/api/assignments/:id` | Delete one of your own assignments |
+| `POST` | `/api/submissions` | Mark an assignment as submitted |
+| `GET` | `/api/students` | List students for admin dashboards |
+| `POST` | `/api/ai/assignment-draft` | Generate assignment title/description with Gemini (admin only) |
+
+Postman collection: [postman/EduFlow.postman_collection.json](postman/EduFlow.postman_collection.json)
 
 ---
 
@@ -170,28 +207,27 @@ The UI uses a **dark glassmorphism theme** — semi-transparent cards with `back
 
 | Rule | Implementation |
 | :--- | :--- |
-| Students see only their own assignment list | Submission map keyed by `currentUser.id` |
-| Students cannot access admin views | `App.jsx` routes strictly by `currentUser.role` |
+| Students and admins use the same client shell | `AppContext` fetches `/api/auth/me` on load |
+| Students cannot access admin routes | `requireRole('admin')` on the backend |
 | Admins see all student submission statuses | `assignment.submissions` object per student |
 | Admins manage only their own assignments | `createdBy` field validated before delete |
-| Session persists across page refresh | `currentUser` stored in `localStorage` |
+| Session persists across refresh | JWT stored in an httpOnly cookie |
 
 ---
 
 ## 🗂️ Data Flow
 
-```
-mockData.js  ──►  AppContext (localStorage)  ──►  Dashboard Components
-                        │
-              ┌─────────┼──────────┐
-              ▼         ▼          ▼
-           Login   Assignments  Students
-          (auth)    (CRUD)       (list)
+```mermaid
+flowchart LR
+    UI[React Frontend] --> API[Express REST API]
+    API --> JWT[JWT Cookie Auth]
+    API --> DB[(MongoDB)]
+    UI -->|fetch /api/*| API
 ```
 
-1. On first load, `mockData.js` seeds `localStorage` with demo users and assignments.
-2. `AppContext` reads from `localStorage` on mount and syncs back on every state change via `useEffect`.
-3. Components read state via `useApp()` and dispatch actions (submit, create, delete) through context functions.
+1. The frontend loads the current user from `/api/auth/me`.
+2. The API signs and verifies JWT cookies, so auth state is not stored in localStorage.
+3. Assignment and student data come from MongoDB through the REST routes.
 4. The user's `role` field determines which dashboard renders and what actions are available.
 
 ---
