@@ -140,7 +140,7 @@ export function AppProvider({ children }) {
   }
 
   const submitAssignment = async (assignmentId) => {
-    await request('/api/submissions', {
+    await request('/api/assignments/submit', {
       method: 'POST',
       body: JSON.stringify({ assignmentId }),
     })
